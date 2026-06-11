@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 # Создаём рабочую директорию RustDesk Server
 mkdir -p ~/rustdeskdocker
 cd ~/rustdeskdocker

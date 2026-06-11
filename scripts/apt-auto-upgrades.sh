@@ -26,6 +26,8 @@ systemctl list-timers 'apt-daily*' --no-pager
 # Проверяем конфигурацию без реальной установки обновлений
 sudo unattended-upgrade --dry-run --debug
 
-# Выводим сообщение об успешном выполнении
+# Выводим сообщение об успешном выполнении в зелёной рамке
 echo
-printf '\033[1;32m%s\033[0m\n' "Automatic APT security updates configured successfully."
+printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\033[1;32m%s\033[0m\n' " Automatic APT security updates configured successfully."
+printf '\033[1;32m%s\033[0m\n' "============================================================"

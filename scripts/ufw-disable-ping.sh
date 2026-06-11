@@ -12,3 +12,8 @@ sudo ufw reload
 
 # Проверяем статус UFW
 sudo ufw status numbered
+
+echo
+printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\033[1;32m%s\033[0m\n' " Incoming ping has been disabled successfully."
+printf '\033[1;32m%s\033[0m\n' "============================================================"

@@ -1,6 +1,7 @@
-# Устанавливаем Fail2Ban, создаём отдельную SSH-конфигурацию, автоопределяем SSH-порт, запускаем и проверяем
+#!/usr/bin/env bash
 set -e
 
+# Устанавливаем Fail2Ban, создаём отдельную SSH-конфигурацию, автоопределяем SSH-порт, запускаем и проверяем
 sudo apt install -y fail2ban
 
 SSH_PORTS="$(sudo sshd -T 2>/dev/null | awk '$1 == "port" {print $2}' | sort -n -u | paste -sd, -)"
@@ -24,3 +25,8 @@ sudo systemctl enable --now fail2ban
 sudo systemctl restart fail2ban
 sudo fail2ban-client status
 sudo fail2ban-client status sshd
+
+echo
+printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\033[1;32m%s\033[0m\n' " Fail2Ban SSH protection configured successfully."
+printf '\033[1;32m%s\033[0m\n' "============================================================"

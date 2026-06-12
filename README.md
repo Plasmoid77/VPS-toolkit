@@ -147,3 +147,40 @@ sudo ufw allow 21119/tcp   # RustDesk web client support for hbbr
 ## Notes
 
 These scripts are intended for Debian-based VPS servers.
+
+## Run scripts
+
+```bash
+# Install extended Debian admin package set
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/debian-admin-packages-install.sh | sudo bash
+
+# Configure automatic APT security updates
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/apt-auto-upgrades.sh | sudo bash
+
+# Install Docker Engine and Docker Compose plugin on Debian
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/docker-debian-setup.sh | sudo bash
+
+# Install and configure Fail2Ban for SSH
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/fail2ban-setup.sh | sudo bash
+
+# Change hostname and update /etc/hosts
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
+
+# Check IP address quality and reputation
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ip-quality-check.sh | sudo bash
+
+# Deploy RustDesk Server with Docker Compose
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/rustdesk-server-setup.sh | sudo bash
+
+# Install daily SSH/security monitoring script with logs
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/security-check-setup.sh | sudo bash
+
+# Install and run Ookla Speedtest CLI
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/speedtest-cli.sh | sudo bash
+
+# Disable incoming ping via UFW rules
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-disable-ping.sh | sudo bash
+
+# Enable incoming ping back via UFW rules
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-enable-ping.sh | sudo bash
+```

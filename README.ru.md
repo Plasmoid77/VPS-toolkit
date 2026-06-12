@@ -18,6 +18,7 @@
 | `security-check-setup.sh` | Устанавливает ежедневный SSH/security мониторинг с логами |
 | `speedtest-cli.sh` | Устанавливает и запускает Ookla Speedtest CLI |
 | `ssh-port-change.sh` | Меняет SSH-порт, добавляет UFW limit-правило и обновляет Fail2Ban |
+| `ufw-basic-setup.sh` | Применяет минимальные правила UFW и включает firewall |
 | `ufw-disable-ping.sh` | Отключает входящий ping через UFW |
 | `ufw-enable-ping.sh` | Включает входящий ping обратно через UFW |
 
@@ -106,6 +107,33 @@ ssh root@SERVER_IP -p 41337
 ```
 
 Скрипт не удаляет старые UFW-правила автоматически.
+
+## Базовая настройка UFW
+
+Скрипт базовой настройки UFW применяет минимальные firewall defaults и включает UFW:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-basic-setup.sh | sudo bash
+```
+
+Запускай его только после того, как SSH-доступ уже разрешён: через `ssh-port-change.sh` или вручную:
+
+| Условие | Зачем это нужно |
+|---|---|
+| `ssh-port-change.sh` уже выполнен, или SSH-порт открыт вручную | Так UFW не заблокирует SSH-доступ после включения firewall |
+| Новый SSH-вход проверен из другого терминала | Это подтверждает, что SSH-порт доступен |
+| Нужные сервисные порты уже открыты | Иначе UFW может заблокировать нужные сервисы |
+
+Что делает скрипт:
+
+| Шаг | Действие |
+|---|---|
+| Incoming policy | Выполняет `sudo ufw default deny incoming` |
+| Outgoing policy | Выполняет `sudo ufw default allow outgoing` |
+| Enable firewall | Выполняет `sudo ufw --force enable` |
+| Status check | Показывает `sudo ufw status numbered` |
+
+Не запускай этот скрипт до того, как SSH-порт разрешён и проверен, иначе можно потерять доступ к серверу.
 
 ## Fail2Ban
 
@@ -209,6 +237,10 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/s
 
 # Сменить SSH-порт, добавить UFW limit-правило и обновить Fail2Ban
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+
+# Применить минимальные правила UFW и включить firewall
+# Запускать только после ssh-port-change.sh или после ручного открытия и проверки SSH-порта
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-basic-setup.sh | sudo bash
 
 # Отключить входящий ping через UFW
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-disable-ping.sh | sudo bash

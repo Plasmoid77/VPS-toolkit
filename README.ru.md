@@ -116,7 +116,7 @@ ssh root@SERVER_IP -p 41337
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-basic-setup.sh | sudo bash
 ```
 
-Запускай его только после того, как SSH-доступ уже разрешён: через `ssh-port-change.sh` или вручную:
+Запускать его только после того, как SSH-доступ уже разрешён: через `ssh-port-change.sh` или вручную:
 
 | Условие | Зачем это нужно |
 |---|---|
@@ -133,7 +133,7 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/u
 | Enable firewall | Выполняет `sudo ufw --force enable` |
 | Status check | Показывает `sudo ufw status numbered` |
 
-Не запускай этот скрипт до того, как SSH-порт разрешён и проверен, иначе можно потерять доступ к серверу.
+Не запускать этот скрипт до того, как SSH-порт разрешён и проверен, иначе можно потерять доступ к серверу.
 
 ## Fail2Ban
 

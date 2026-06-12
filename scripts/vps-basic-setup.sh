@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -o pipefail
 
 PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
@@ -35,14 +36,22 @@ success_box() {
 
 run_script() {
     SCRIPT_NAME="$1"
-    curl -fsSL "${BASE_URL}/${SCRIPT_NAME}" | "${SUDO[@]}" bash
+    wget -qO- "${BASE_URL}/${SCRIPT_NAME}" | "${SUDO[@]}" bash
 }
 
 run_script_with_args() {
     SCRIPT_NAME="$1"
     shift
-    curl -fsSL "${BASE_URL}/${SCRIPT_NAME}" | "${SUDO[@]}" bash -s -- "$@"
+    wget -qO- "${BASE_URL}/${SCRIPT_NAME}" | "${SUDO[@]}" bash -s -- "$@"
 }
+
+# Проверяем, что wget установлен
+if ! command -v wget >/dev/null 2>&1; then
+    echo "wget is not installed."
+    echo "Run as root:"
+    echo "apt install -y wget"
+    exit 1
+fi
 
 # Проверяем, что hostname передан
 if [ -z "$NEW_HOSTNAME" ]; then

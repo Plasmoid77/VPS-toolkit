@@ -54,17 +54,8 @@ if ! grep -Eq '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf'
 fi
 
 # Открываем новый SSH-порт в UFW через limit, чтобы добавить базовую защиту от brutforce
+# Старые UFW-правила скрипт не удаляет
 if command -v ufw >/dev/null 2>&1; then
-    # Удаляем старые ошибочные ALLOW-правила, которые создавались предыдущей версией скрипта
-    "${SUDO[@]}" ufw status numbered 2>/dev/null \
-        | awk -F'[][]' '/# VPS-toolkit SSH port/ {gsub(/ /,"",$2); print $2}' \
-        | sort -rn \
-        | while read -r rule_number; do
-            [ -n "$rule_number" ] || continue
-            printf 'y\n' | "${SUDO[@]}" ufw delete "$rule_number" >/dev/null || true
-        done
-
-    # Добавляем или обновляем правило для нового SSH-порта как LIMIT, а не ALLOW
     "${SUDO[@]}" ufw limit "${NEW_SSH_PORT}/tcp" comment "SSH with basic brutforce protection"
 fi
 

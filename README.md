@@ -1,4 +1,3 @@
-````markdown
 # VPS-toolkit
 
 A small collection of Bash scripts for quick VPS setup, basic hardening, monitoring and self-hosted services.
@@ -24,7 +23,7 @@ Replace `SCRIPT_NAME.sh` with the script you want to run:
 
 ```bash
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/SCRIPT_NAME.sh | sudo bash
-````
+```
 
 Example:
 

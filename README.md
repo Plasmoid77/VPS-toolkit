@@ -7,6 +7,7 @@ A small collection of Bash scripts for quick VPS setup, basic hardening, monitor
 | Script | Purpose |
 |---|---|
 | `apt-auto-upgrades.sh` | Configure automatic APT security updates |
+| `debian-admin-packages-install.sh` | Install an extended admin package set for Debian |
 | `docker-debian-setup.sh` | Install Docker Engine and Docker Compose plugin on Debian |
 | `fail2ban-setup.sh` | Install and configure Fail2Ban for SSH |
 | `hostname-change.sh` | Change system hostname and update `/etc/hosts` |
@@ -31,6 +32,40 @@ Example:
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/fail2ban-setup.sh | sudo bash
 ```
 
+## Debian admin packages
+
+Install an extended admin package set for a fresh Debian VPS:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/debian-admin-packages-install.sh | sudo bash
+```
+
+Package set:
+
+| Package | Purpose |
+|---|---|
+| `sudo` | Run commands with elevated privileges |
+| `curl` | Download scripts and make HTTP requests |
+| `ca-certificates` | HTTPS certificate support |
+| `gnupg` | GPG keys for external repositories |
+| `git` | Git, Codeberg and GitHub workflows |
+| `nano` | Simple terminal text editor |
+| `less` | Log and text viewer |
+| `cron` | Task scheduler |
+| `ufw` | Firewall |
+| `fail2ban` | SSH brute-force protection |
+| `unattended-upgrades` | Automatic security updates |
+| `apt-listchanges` | Package changelog viewer during upgrades |
+| `lsof` | Open files and ports diagnostics |
+| `jq` | JSON processor |
+| `dnsutils` | DNS tools like `dig` and `nslookup` |
+| `netcat-openbsd` | `nc` tool for port checks |
+| `socat` | Advanced socket and network utility |
+| `htop` | Interactive process viewer |
+| `rsync` | File copy and sync tool |
+| `fastfetch` | System information summary |
+| `ranger` | Terminal file manager |
+
 ## Hostname change
 
 The hostname script requires an argument:
@@ -49,13 +84,13 @@ sudo cat /etc/fail2ban/jail.d/sshd.local
 
 Configuration meaning:
 
-```text
-bantime = 3600       # bans an IP for 1 hour
-findtime = 600       # checks failed attempts within 10 minutes
-maxretry = 3         # bans after 3 failed attempts
-port = auto          # uses the current SSH port from sshd, for example 41337
-backend = systemd    # reads SSH logs through journalctl instead of /var/log/auth.log
-```
+| Option | Meaning |
+|---|---|
+| `bantime = 3600` | Bans an IP for 1 hour |
+| `findtime = 600` | Checks failed attempts within 10 minutes |
+| `maxretry = 3` | Bans after 3 failed attempts |
+| `port = auto` | Uses the current SSH port from `sshd`, for example `41337` |
+| `backend = systemd` | Reads SSH logs through `journalctl` instead of `/var/log/auth.log` |
 
 ## APT auto-upgrades
 

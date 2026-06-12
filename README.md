@@ -1,5 +1,7 @@
 # VPS-toolkit
 
+[Русский](README.ru.md)
+
 A small collection of Bash scripts for quick VPS setup, basic hardening, monitoring and self-hosted services.
 
 ## Scripts
@@ -7,6 +9,8 @@ A small collection of Bash scripts for quick VPS setup, basic hardening, monitor
 | Script | Purpose |
 |---|---|
 | `apt-auto-upgrades.sh` | Configure automatic APT security updates |
+| `bbr-enable.sh` | Enable BBR TCP congestion control |
+| `bbr-disable.sh` | Disable BBR TCP congestion control and restore a non-BBR mode |
 | `debian-admin-packages-install.sh` | Install an extended admin package set for Debian |
 | `docker-debian-setup.sh` | Install Docker Engine and Docker Compose plugin on Debian |
 | `fail2ban-setup.sh` | Install and configure Fail2Ban for SSH |
@@ -71,7 +75,7 @@ Package set:
 The hostname script requires an argument:
 
 ```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- durinda
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 ```
 
 ## Fail2Ban
@@ -91,6 +95,27 @@ Configuration meaning:
 | `maxretry = 3` | Bans after 3 failed attempts |
 | `port = auto` | Uses the current SSH port from `sshd`, for example `41337` |
 | `backend = systemd` | Reads SSH logs through `journalctl` instead of `/var/log/auth.log` |
+
+## BBR
+
+Enable BBR TCP congestion control:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-enable.sh | sudo bash
+```
+
+Disable BBR and restore a non-BBR congestion control mode:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-disable.sh | sudo bash
+```
+
+Check current TCP congestion control and qdisc:
+
+```bash
+sysctl net.ipv4.tcp_congestion_control
+sysctl net.core.default_qdisc
+```
 
 ## APT auto-upgrades
 
@@ -144,10 +169,6 @@ sudo ufw allow 21118/tcp   # RustDesk web client support for hbbs
 sudo ufw allow 21119/tcp   # RustDesk web client support for hbbr
 ```
 
-## Notes
-
-These scripts are intended for Debian-based VPS servers.
-
 ## Run scripts
 
 ```bash
@@ -157,6 +178,12 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/d
 # Configure automatic APT security updates
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/apt-auto-upgrades.sh | sudo bash
 
+# Enable BBR TCP congestion control
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-enable.sh | sudo bash
+
+# Disable BBR TCP congestion control
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-disable.sh | sudo bash
+
 # Install Docker Engine and Docker Compose plugin on Debian
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/docker-debian-setup.sh | sudo bash
 
@@ -164,7 +191,7 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/d
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/fail2ban-setup.sh | sudo bash
 
 # Change hostname and update /etc/hosts
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- durinda
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 
 # Check IP address quality and reputation
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ip-quality-check.sh | sudo bash
@@ -184,3 +211,7 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/u
 # Enable incoming ping back via UFW rules
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-enable-ping.sh | sudo bash
 ```
+
+## Notes
+
+These scripts are intended for Debian-based VPS servers.

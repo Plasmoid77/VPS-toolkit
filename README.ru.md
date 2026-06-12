@@ -21,6 +21,7 @@
 | `ufw-basic-setup.sh` | Применяет минимальные правила UFW и включает firewall |
 | `ufw-disable-ping.sh` | Отключает входящий ping через UFW |
 | `ufw-enable-ping.sh` | Включает входящий ping обратно через UFW |
+| `vps-basic-setup.sh` | Запускает полный базовый деплой VPS одной командой |
 
 ## Использование
 
@@ -35,6 +36,39 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/S
 ```bash
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/fail2ban-setup.sh | sudo bash
 ```
+
+## Быстрый базовый деплой VPS
+
+Скрипт быстрого старта запускает полный базовый деплой нового Debian VPS.
+
+Он принимает два аргумента:
+
+| Аргумент | Значение | Пример |
+|---|---|---|
+| `NEW_HOSTNAME` | Желаемое имя хоста | `ordinary-coffee` |
+| `NEW_SSH_PORT` | Желаемый SSH-порт | `41337` |
+
+Запуск:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+```
+
+Что запускает скрипт:
+
+| Порядок | Скрипт | Действие |
+|---:|---|---|
+| 1 | `debian-admin-packages-install.sh` | Устанавливает базовый админский набор пакетов Debian |
+| 2 | `hostname-change.sh` | Меняет hostname и обновляет `/etc/hosts` |
+| 3 | `apt-auto-upgrades.sh` | Включает автоматические security-обновления APT |
+| 4 | `ssh-port-change.sh` | Меняет SSH-порт и добавляет UFW `LIMIT`-правило |
+| 5 | `ufw-basic-setup.sh` | Применяет минимальные правила UFW и включает firewall |
+| 6 | `fail2ban-setup.sh` | Устанавливает и настраивает Fail2Ban для SSH |
+| 7 | `security-check-setup.sh` | Устанавливает ежедневный SSH/security мониторинг |
+| 8 | `bbr-enable.sh` | Включает TCP congestion control BBR |
+| 9 | `ufw-disable-ping.sh` | Отключает входящий ping |
+
+Этот скрипт рассчитан на быстрый доверенный первичный сетап, когда базовый порядок деплоя уже известен и проверен. После завершения нужно подключаться по новому SSH-порту.
 
 ## Debian admin packages
 
@@ -116,7 +150,7 @@ ssh root@SERVER_IP -p 41337
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-basic-setup.sh | sudo bash
 ```
 
-Запускать его только после того, как SSH-доступ уже разрешён: через `ssh-port-change.sh` или вручную:
+Запускай его только после того, как SSH-доступ уже разрешён: через `ssh-port-change.sh` или вручную:
 
 | Условие | Зачем это нужно |
 |---|---|
@@ -133,7 +167,7 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/u
 | Enable firewall | Выполняет `sudo ufw --force enable` |
 | Status check | Показывает `sudo ufw status numbered` |
 
-Не запускать этот скрипт до того, как SSH-порт разрешён и проверен, иначе можно потерять доступ к серверу.
+Не запускай этот скрипт до того, как SSH-порт разрешён и проверен, иначе можно потерять доступ к серверу.
 
 ## Fail2Ban
 
@@ -208,6 +242,9 @@ sudo ufw allow 21119/tcp   # RustDesk web client support for hbbr
 ## Запуск скриптов
 
 ```bash
+# Запустить полный базовый деплой VPS одной командой
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+
 # Установить расширенный админский набор пакетов для Debian
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/debian-admin-packages-install.sh | sudo bash
 

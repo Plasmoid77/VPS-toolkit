@@ -18,6 +18,7 @@ A small collection of Bash scripts for quick VPS setup, basic hardening, monitor
 | `security-check-setup.sh` | Install daily SSH/security monitoring script with logs |
 | `speedtest-cli.sh` | Install and run Ookla Speedtest CLI |
 | `ssh-port-change.sh` | Change SSH port, add UFW limit rule and update Fail2Ban config |
+| `ufw-basic-setup.sh` | Apply minimal UFW defaults and enable the firewall |
 | `ufw-disable-ping.sh` | Disable incoming ping via UFW rules |
 | `ufw-enable-ping.sh` | Enable incoming ping back via UFW rules |
 
@@ -106,6 +107,33 @@ ssh root@SERVER_IP -p 41337
 ```
 
 The script does not remove old UFW rules automatically.
+
+## Basic UFW setup
+
+The basic UFW setup script applies minimal firewall defaults and enables UFW:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-basic-setup.sh | sudo bash
+```
+
+Run it only after SSH access has already been allowed, either by `ssh-port-change.sh` or manually:
+
+| Requirement | Why it matters |
+|---|---|
+| `ssh-port-change.sh` has already been run, or the SSH port has been opened manually | This ensures UFW will not block SSH access after enabling the firewall |
+| New SSH login has been tested from another terminal | This confirms that the SSH port is reachable |
+| Required service ports are already allowed | Otherwise UFW may block services you need |
+
+What it does:
+
+| Step | Action |
+|---|---|
+| Incoming policy | Sets `sudo ufw default deny incoming` |
+| Outgoing policy | Sets `sudo ufw default allow outgoing` |
+| Enable firewall | Runs `sudo ufw --force enable` |
+| Status check | Shows `sudo ufw status numbered` |
+
+Do not run this script before the SSH port is allowed and tested, otherwise you can lock yourself out of the server.
 
 ## Fail2Ban
 
@@ -209,6 +237,10 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/s
 
 # Change SSH port, add UFW limit rule and update Fail2Ban config
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+
+# Apply minimal UFW defaults and enable the firewall
+# Run only after ssh-port-change.sh or after manually opening and testing the SSH port
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-basic-setup.sh | sudo bash
 
 # Disable incoming ping via UFW rules
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-disable-ping.sh | sudo bash

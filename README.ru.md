@@ -9,8 +9,6 @@
 | Скрипт | Назначение |
 |---|---|
 | `apt-auto-upgrades.sh` | Настраивает автоматические security-обновления APT |
-| `bbr-enable.sh` | Включает TCP congestion control BBR |
-| `bbr-disable.sh` | Отключает BBR и восстанавливает не-BBR режим |
 | `debian-admin-packages-install.sh` | Устанавливает расширенный админский набор пакетов для Debian |
 | `docker-debian-setup.sh` | Устанавливает Docker Engine и Docker Compose plugin на Debian |
 | `fail2ban-setup.sh` | Устанавливает и настраивает Fail2Ban для SSH |
@@ -19,6 +17,7 @@
 | `rustdesk-server-setup.sh` | Разворачивает RustDesk Server через Docker Compose |
 | `security-check-setup.sh` | Устанавливает ежедневный SSH/security мониторинг с логами |
 | `speedtest-cli.sh` | Устанавливает и запускает Ookla Speedtest CLI |
+| `ssh-port-change.sh` | Меняет SSH-порт, добавляет UFW limit-правило и обновляет Fail2Ban |
 | `ufw-disable-ping.sh` | Отключает входящий ping через UFW |
 | `ufw-enable-ping.sh` | Включает входящий ping обратно через UFW |
 
@@ -78,6 +77,36 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/d
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 ```
 
+## Смена SSH-порта
+
+Скрипт смены SSH-порта требует номер порта как аргумент:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+```
+
+Что делает скрипт:
+
+| Шаг | Действие |
+|---|---|
+| Проверка порта | Проверяет, что аргумент является портом от `1` до `65535` |
+| Backup | Сохраняет backup SSH-конфигов в `/etc/ssh/vps-toolkit-backups/` |
+| SSH config | Записывает новый порт в `/etc/ssh/sshd_config.d/99-vps-toolkit-port.conf` |
+| Main config | Добавляет `Include /etc/ssh/sshd_config.d/*.conf` в `/etc/ssh/sshd_config`, если его нет |
+| Старые Port-строки | Комментирует активные старые строки `Port` в SSH-конфигах |
+| UFW | Добавляет `LIMIT`-правило для нового SSH-порта с комментом `SSH with basic brutforce protection` |
+| Проверка | Выполняет `sshd -t` перед применением |
+| Reload | Перезагружает SSH без закрытия текущей сессии |
+| Fail2Ban | Обновляет `/etc/fail2ban/jail.d/sshd.local`, если файл существует |
+
+После запуска не закрывай текущую SSH-сессию и проверь новый вход из другого терминала:
+
+```bash
+ssh root@SERVER_IP -p 41337
+```
+
+Скрипт не удаляет старые UFW-правила автоматически.
+
 ## Fail2Ban
 
 Проверить созданный SSH jail config:
@@ -95,27 +124,6 @@ sudo cat /etc/fail2ban/jail.d/sshd.local
 | `maxretry = 3` | Банит после 3 неудачных попыток |
 | `port = auto` | Берёт текущий SSH-порт из `sshd`, например `41337` |
 | `backend = systemd` | Читает SSH-логи через `journalctl`, без привязки к `/var/log/auth.log` |
-
-## BBR
-
-Включить TCP congestion control BBR:
-
-```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-enable.sh | sudo bash
-```
-
-Отключить BBR и восстановить не-BBR режим:
-
-```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-disable.sh | sudo bash
-```
-
-Проверить текущий TCP congestion control и qdisc:
-
-```bash
-sysctl net.ipv4.tcp_congestion_control
-sysctl net.core.default_qdisc
-```
 
 ## APT auto-upgrades
 
@@ -178,12 +186,6 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/d
 # Настроить автоматические security-обновления APT
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/apt-auto-upgrades.sh | sudo bash
 
-# Включить TCP congestion control BBR
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-enable.sh | sudo bash
-
-# Отключить TCP congestion control BBR
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-disable.sh | sudo bash
-
 # Установить Docker Engine и Docker Compose plugin на Debian
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/docker-debian-setup.sh | sudo bash
 
@@ -204,6 +206,9 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/s
 
 # Установить и запустить Ookla Speedtest CLI
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/speedtest-cli.sh | sudo bash
+
+# Сменить SSH-порт, добавить UFW limit-правило и обновить Fail2Ban
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
 
 # Отключить входящий ping через UFW
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-disable-ping.sh | sudo bash

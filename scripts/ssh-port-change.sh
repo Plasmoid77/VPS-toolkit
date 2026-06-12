@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 # Определяем, нужен ли sudo
 if [ "$(id -u)" -eq 0 ]; then
     SUDO=()
@@ -13,7 +15,7 @@ NEW_SSH_PORT="${1:-}"
 # Проверяем, что порт передан
 if [ -z "$NEW_SSH_PORT" ]; then
     echo "Usage: ssh-port-change.sh NEW_SSH_PORT"
-    echo "Example: ssh-port-change.sh xXxXx"
+    echo "Example: ssh-port-change.sh 41337"
     exit 1
 fi
 
@@ -37,13 +39,34 @@ if [ -d "$SSH_CONFIG_DIR" ]; then
     "${SUDO[@]}" cp -a "$SSH_CONFIG_DIR" "$BACKUP_DIR/sshd_config.d"
 fi
 
-# Открываем новый SSH-порт в UFW с комментарием
-if command -v ufw >/dev/null 2>&1; then
-    "${SUDO[@]}" ufw allow proto tcp to any port "$NEW_SSH_PORT" comment "VPS-toolkit SSH port"
-fi
-
 # Создаём директорию для drop-in SSH-конфигов
 "${SUDO[@]}" mkdir -p "$SSH_CONFIG_DIR"
+
+# Добавляем Include для sshd_config.d, если его нет
+if ! grep -Eq '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf' "$SSH_CONFIG"; then
+    TMP_FILE="$(mktemp)"
+    {
+        echo "Include /etc/ssh/sshd_config.d/*.conf"
+        cat "$SSH_CONFIG"
+    } > "$TMP_FILE"
+    "${SUDO[@]}" cp "$TMP_FILE" "$SSH_CONFIG"
+    rm -f "$TMP_FILE"
+fi
+
+# Открываем новый SSH-порт в UFW через limit, чтобы добавить базовую защиту от brutforce
+if command -v ufw >/dev/null 2>&1; then
+    # Удаляем старые ошибочные ALLOW-правила, которые создавались предыдущей версией скрипта
+    "${SUDO[@]}" ufw status numbered 2>/dev/null \
+        | awk -F'[][]' '/# VPS-toolkit SSH port/ {gsub(/ /,"",$2); print $2}' \
+        | sort -rn \
+        | while read -r rule_number; do
+            [ -n "$rule_number" ] || continue
+            printf 'y\n' | "${SUDO[@]}" ufw delete "$rule_number" >/dev/null || true
+        done
+
+    # Добавляем или обновляем правило для нового SSH-порта как LIMIT, а не ALLOW
+    "${SUDO[@]}" ufw limit "${NEW_SSH_PORT}/tcp" comment "SSH with basic brutforce protection"
+fi
 
 # Комментируем старые активные Port-строки, чтобы SSH слушал только новый порт
 for file in "$SSH_CONFIG" "$SSH_CONFIG_DIR"/*.conf; do

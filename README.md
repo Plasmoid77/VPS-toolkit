@@ -71,6 +71,3 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/S
 ```
 
 Use at your own risk.
-
-```
-```

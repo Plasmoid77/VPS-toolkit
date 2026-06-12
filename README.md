@@ -9,8 +9,6 @@ A small collection of Bash scripts for quick VPS setup, basic hardening, monitor
 | Script | Purpose |
 |---|---|
 | `apt-auto-upgrades.sh` | Configure automatic APT security updates |
-| `bbr-enable.sh` | Enable BBR TCP congestion control |
-| `bbr-disable.sh` | Disable BBR TCP congestion control and restore a non-BBR mode |
 | `debian-admin-packages-install.sh` | Install an extended admin package set for Debian |
 | `docker-debian-setup.sh` | Install Docker Engine and Docker Compose plugin on Debian |
 | `fail2ban-setup.sh` | Install and configure Fail2Ban for SSH |
@@ -19,6 +17,7 @@ A small collection of Bash scripts for quick VPS setup, basic hardening, monitor
 | `rustdesk-server-setup.sh` | Deploy RustDesk Server with Docker Compose |
 | `security-check-setup.sh` | Install daily SSH/security monitoring script with logs |
 | `speedtest-cli.sh` | Install and run Ookla Speedtest CLI |
+| `ssh-port-change.sh` | Change SSH port, add UFW limit rule and update Fail2Ban config |
 | `ufw-disable-ping.sh` | Disable incoming ping via UFW rules |
 | `ufw-enable-ping.sh` | Enable incoming ping back via UFW rules |
 
@@ -78,6 +77,36 @@ The hostname script requires an argument:
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 ```
 
+## SSH port change
+
+The SSH port script requires a port number as an argument:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+```
+
+What it does:
+
+| Step | Action |
+|---|---|
+| Port validation | Checks that the argument is a valid port from `1` to `65535` |
+| Backup | Saves SSH config backups under `/etc/ssh/vps-toolkit-backups/` |
+| SSH config | Writes the new port to `/etc/ssh/sshd_config.d/99-vps-toolkit-port.conf` |
+| Main config | Adds `Include /etc/ssh/sshd_config.d/*.conf` to `/etc/ssh/sshd_config` if missing |
+| Old port lines | Comments active old `Port` lines in SSH config files |
+| UFW | Adds a `LIMIT` rule for the new SSH port with the comment `SSH with basic brutforce protection` |
+| Validation | Runs `sshd -t` before applying the change |
+| Reload | Reloads SSH without closing the current session |
+| Fail2Ban | Updates `/etc/fail2ban/jail.d/sshd.local` if it exists |
+
+After running it, keep the current SSH session open and test a new login from another terminal:
+
+```bash
+ssh root@SERVER_IP -p 41337
+```
+
+The script does not remove old UFW rules automatically.
+
 ## Fail2Ban
 
 Check the generated SSH jail config:
@@ -95,27 +124,6 @@ Configuration meaning:
 | `maxretry = 3` | Bans after 3 failed attempts |
 | `port = auto` | Uses the current SSH port from `sshd`, for example `41337` |
 | `backend = systemd` | Reads SSH logs through `journalctl` instead of `/var/log/auth.log` |
-
-## BBR
-
-Enable BBR TCP congestion control:
-
-```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-enable.sh | sudo bash
-```
-
-Disable BBR and restore a non-BBR congestion control mode:
-
-```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-disable.sh | sudo bash
-```
-
-Check current TCP congestion control and qdisc:
-
-```bash
-sysctl net.ipv4.tcp_congestion_control
-sysctl net.core.default_qdisc
-```
 
 ## APT auto-upgrades
 
@@ -178,12 +186,6 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/d
 # Configure automatic APT security updates
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/apt-auto-upgrades.sh | sudo bash
 
-# Enable BBR TCP congestion control
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-enable.sh | sudo bash
-
-# Disable BBR TCP congestion control
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/bbr-disable.sh | sudo bash
-
 # Install Docker Engine and Docker Compose plugin on Debian
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/docker-debian-setup.sh | sudo bash
 
@@ -204,6 +206,9 @@ curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/s
 
 # Install and run Ookla Speedtest CLI
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/speedtest-cli.sh | sudo bash
+
+# Change SSH port, add UFW limit rule and update Fail2Ban config
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
 
 # Disable incoming ping via UFW rules
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/ufw-disable-ping.sh | sudo bash

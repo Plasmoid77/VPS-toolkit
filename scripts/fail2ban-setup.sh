@@ -23,7 +23,22 @@ EOF
 sudo fail2ban-client -t
 sudo systemctl enable --now fail2ban
 sudo systemctl restart fail2ban
+
+# Ждём, пока Fail2Ban поднимет socket
+for i in 1 2 3 4 5; do
+    if sudo fail2ban-client ping >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+
+# Проверяем, что Fail2Ban реально отвечает
+sudo fail2ban-client ping
+
+# Показываем общий статус Fail2Ban
 sudo fail2ban-client status
+
+# Показываем статус SSH jail
 sudo fail2ban-client status sshd
 
 echo

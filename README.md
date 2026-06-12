@@ -39,6 +39,38 @@ The hostname script requires an argument:
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 ```
 
+## Fail2Ban
+
+Check the generated SSH jail config:
+
+```bash
+sudo cat /etc/fail2ban/jail.d/sshd.local
+```
+
+Configuration meaning:
+
+```text
+bantime = 3600       # bans an IP for 1 hour
+findtime = 600       # checks failed attempts within 10 minutes
+maxretry = 3         # bans after 3 failed attempts
+port = auto          # uses the current SSH port from sshd, for example 41337
+backend = systemd    # reads SSH logs through journalctl instead of /var/log/auth.log
+```
+
+## APT auto-upgrades
+
+View unattended-upgrades log:
+
+```bash
+sudo less /var/log/unattended-upgrades/unattended-upgrades.log
+```
+
+Exit log view:
+
+```text
+q
+```
+
 ## Security check
 
 Install daily monitoring:
@@ -53,10 +85,28 @@ Run the installed check manually:
 sudo /usr/local/bin/security-check.sh
 ```
 
+Run the installed check manually and write output to the log:
+
+```bash
+sudo /usr/local/bin/security-check.sh >> /var/log/security-check.log 2>&1
+sudo tail -n 100 /var/log/security-check.log
+```
+
 View the log:
 
 ```bash
 sudo less /var/log/security-check.log
+```
+
+## RustDesk Server
+
+The RustDesk setup script opens only the minimum required ports.
+
+If web client support is needed, add these UFW rules:
+
+```bash
+sudo ufw allow 21118/tcp   # RustDesk web client support for hbbs
+sudo ufw allow 21119/tcp   # RustDesk web client support for hbbr
 ```
 
 ## Notes

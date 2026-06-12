@@ -21,6 +21,7 @@ A small collection of Bash scripts for quick VPS setup, basic hardening, monitor
 | `ufw-basic-setup.sh` | Apply minimal UFW defaults and enable the firewall |
 | `ufw-disable-ping.sh` | Disable incoming ping via UFW rules |
 | `ufw-enable-ping.sh` | Enable incoming ping back via UFW rules |
+| `vps-basic-setup.sh` | Run the full basic VPS deployment sequence |
 
 ## Usage
 
@@ -35,6 +36,39 @@ Example:
 ```bash
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/fail2ban-setup.sh | sudo bash
 ```
+
+## Quick basic VPS setup
+
+The quick setup script runs the full basic deployment sequence for a new Debian VPS.
+
+It takes two arguments:
+
+| Argument | Meaning | Example |
+|---|---|---|
+| `NEW_HOSTNAME` | Desired server hostname | `ordinary-coffee` |
+| `NEW_SSH_PORT` | Desired SSH port | `41337` |
+
+Run:
+
+```bash
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+```
+
+What it runs:
+
+| Order | Script | Action |
+|---:|---|---|
+| 1 | `debian-admin-packages-install.sh` | Installs the base Debian admin package set |
+| 2 | `hostname-change.sh` | Changes hostname and updates `/etc/hosts` |
+| 3 | `apt-auto-upgrades.sh` | Enables automatic APT security updates |
+| 4 | `ssh-port-change.sh` | Changes SSH port and adds a UFW `LIMIT` rule |
+| 5 | `ufw-basic-setup.sh` | Applies minimal UFW defaults and enables the firewall |
+| 6 | `fail2ban-setup.sh` | Installs and configures Fail2Ban for SSH |
+| 7 | `security-check-setup.sh` | Installs daily SSH/security monitoring |
+| 8 | `bbr-enable.sh` | Enables BBR TCP congestion control |
+| 9 | `ufw-disable-ping.sh` | Disables incoming ping |
+
+This script is intended for a fast trusted initial setup when the base deployment flow is already known and tested. After it finishes, reconnect using the new SSH port.
 
 ## Debian admin packages
 
@@ -208,6 +242,9 @@ sudo ufw allow 21119/tcp   # RustDesk web client support for hbbr
 ## Run scripts
 
 ```bash
+# Run the full basic VPS deployment sequence
+curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+
 # Install extended Debian admin package set
 curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/debian-admin-packages-install.sh | sudo bash
 

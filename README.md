@@ -51,7 +51,7 @@ It takes two arguments:
 Run:
 
 ```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+wget -qO- https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/vps-basic-setup.sh | bash -s -- ordinary-coffee 41337
 ```
 
 What it runs:

@@ -112,11 +112,3 @@ sudo ufw allow 21119/tcp   # RustDesk web client support for hbbr
 ## Notes
 
 These scripts are intended for Debian-based VPS servers.
-
-Always review a script before running it:
-
-```bash
-curl -fsSL https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts/SCRIPT_NAME.sh | less
-```
-
-Use at your own risk.

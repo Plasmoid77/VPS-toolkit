@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Определяем, нужен ли sudo
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=()
+else
+    SUDO=(sudo)
+fi
+
 # Берём новое имя хоста из первого аргумента
 NEW_HOSTNAME="${1:-}"
 
@@ -18,12 +27,13 @@ if ! echo "$NEW_HOSTNAME" | grep -Eq '^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$|^[a
     exit 1
 fi
 
-# Задаём новое имя хоста
-sudo hostnamectl set-hostname "$NEW_HOSTNAME"
+# Сначала обновляем /etc/hosts, чтобы после hostnamectl не было предупреждения:
+# sudo: unable to resolve host NEW_HOSTNAME
+"${SUDO[@]}" sed -i "/^127.0.1.1/d" /etc/hosts
+echo "127.0.1.1 $NEW_HOSTNAME" | "${SUDO[@]}" tee -a /etc/hosts > /dev/null
 
-# Обновляем локальную запись hostname в /etc/hosts
-sudo sed -i "/^127.0.1.1/d" /etc/hosts
-echo "127.0.1.1 $NEW_HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
+# Затем задаём новое имя хоста
+"${SUDO[@]}" hostnamectl set-hostname "$NEW_HOSTNAME"
 
 # Проверяем результат
 hostnamectl status

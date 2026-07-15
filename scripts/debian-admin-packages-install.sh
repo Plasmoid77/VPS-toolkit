@@ -16,7 +16,7 @@ $SUDO apt update
 # Обновляем установленные пакеты
 $SUDO apt upgrade -y
 
-# Устанавливаем расширенный админский набор без tmux и geoip-bin
+# Устанавливаем расширенный админский набор без
 $SUDO apt install -y \
     sudo \
     curl \
@@ -38,7 +38,10 @@ $SUDO apt install -y \
     htop \
     rsync \
     fastfetch \
-    ranger
+    ranger \
+    build-essential \
+    autotools-dev \
+    automake
 
 # Выводим сообщение об успешном выполнении в зелёной рамке
 echo

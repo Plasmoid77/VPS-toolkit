@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Проверяем качество и “чистоту” IP-адреса сервера
-bash <(curl -Ls https://IP.Check.Place) -l en -p -y
+curl -fsSL https://IP.Check.Place | bash -s -- -l en -p -y
+
+printf '\n\033[1;32m%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    ' IP quality check completed successfully.' \
+    '============================================================'

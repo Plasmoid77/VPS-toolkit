@@ -1,47 +1,35 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Устанавливаем Fail2Ban, создаём отдельную SSH-конфигурацию, автоопределяем SSH-порт, запускаем и проверяем
-sudo apt install -y fail2ban
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
-SSH_PORTS="$(sudo sshd -T 2>/dev/null | awk '$1 == "port" {print $2}' | sort -n -u | paste -sd, -)"
-[ -z "$SSH_PORTS" ] && SSH_PORTS="22"
+apt-get update
+apt-get install -y fail2ban
 
-sudo tee /etc/fail2ban/jail.d/sshd.local > /dev/null <<EOF
-[DEFAULT]
-bantime = 3600  ; банит IP на 1 час
-findtime = 600  ; смотрит попытки за последние 10 минут
-maxretry = 3  ; бан после 3 неудачных попыток
+SSH_PORTS="$(sshd -T | awk '$1 == "port" {print $2}' | sort -nu | paste -sd, -)"
 
+cat > /etc/fail2ban/jail.d/sshd.local <<EOF
 [sshd]
 enabled = true
-port = ${SSH_PORTS}  ; берёт текущий SSH-порт из sshd, например 41337
-filter = sshd
-backend = systemd  ; читает SSH-логи через journalctl, без привязки к /var/log/auth.log
+port = $SSH_PORTS
+backend = systemd
+bantime = 1h
+findtime = 10m
+maxretry = 3
 EOF
 
-sudo fail2ban-client -t
-sudo systemctl enable --now fail2ban
-sudo systemctl restart fail2ban
+fail2ban-client -t
+systemctl enable fail2ban
+systemctl restart fail2ban
 
-# Ждём, пока Fail2Ban поднимет socket
-for i in 1 2 3 4 5; do
-    if sudo fail2ban-client ping >/dev/null 2>&1; then
-        break
-    fi
+for _ in {1..10}; do
+    fail2ban-client ping >/dev/null 2>&1 && break
     sleep 1
 done
 
-# Проверяем, что Fail2Ban реально отвечает
-sudo fail2ban-client ping
+fail2ban-client status sshd
 
-# Показываем общий статус Fail2Ban
-sudo fail2ban-client status
-
-# Показываем статус SSH jail
-sudo fail2ban-client status sshd
-
-echo
-printf '\033[1;32m%s\033[0m\n' "============================================================"
-printf '\033[1;32m%s\033[0m\n' " Fail2Ban SSH protection configured successfully."
-printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\n\033[1;32m%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    ' Fail2Ban SSH protection configured successfully.' \
+    '============================================================'

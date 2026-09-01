@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Запрещаем входящий IPv4 ping
-sudo sed -i 's/-A ufw-before-input -p icmp --icmp-type echo-request -j ACCEPT/-A ufw-before-input -p icmp --icmp-type echo-request -j DROP/' /etc/ufw/before.rules
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
-# Запрещаем входящий IPv6 ping
-sudo sed -i 's/-A ufw6-before-input -p ipv6-icmp --icmpv6-type echo-request -j ACCEPT/-A ufw6-before-input -p ipv6-icmp --icmpv6-type echo-request -j DROP/' /etc/ufw/before6.rules
+sed -i 's/-A ufw-before-input -p icmp --icmp-type echo-request -j ACCEPT/-A ufw-before-input -p icmp --icmp-type echo-request -j DROP/' /etc/ufw/before.rules
+sed -i 's/-A ufw6-before-input -p icmpv6 --icmpv6-type echo-request -j ACCEPT/-A ufw6-before-input -p icmpv6 --icmpv6-type echo-request -j DROP/' /etc/ufw/before6.rules
+grep -Fqx -- '-A ufw-before-input -p icmp --icmp-type echo-request -j DROP' /etc/ufw/before.rules
+grep -Fqx -- '-A ufw6-before-input -p icmpv6 --icmpv6-type echo-request -j DROP' /etc/ufw/before6.rules
+ufw reload
 
-sudo ufw reload
-
-echo
-printf '\033[1;32m%s\033[0m\n' "============================================================"
-printf '\033[1;32m%s\033[0m\n' " Incoming ping has been disabled successfully."
-printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\n\033[1;32m%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    ' Incoming ping disabled successfully.' \
+    '============================================================'

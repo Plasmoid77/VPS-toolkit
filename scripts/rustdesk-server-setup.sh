@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Создаём рабочую директорию RustDesk Server
-mkdir -p ~/rustdeskdocker
-cd ~/rustdeskdocker
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
-# Создаём docker-compose.yml с двумя сервисами: hbbs — ID/signaling, hbbr — relay
+WORKDIR=/root/rustdeskdocker
+install -d "$WORKDIR"
+cd "$WORKDIR"
+
 cat > docker-compose.yml <<'EOF'
 services:
   hbbs:
@@ -14,9 +15,7 @@ services:
     command: hbbs
     volumes:
       - ./data:/root
-    network_mode: "host"
-    depends_on:
-      - hbbr
+    network_mode: host
     restart: unless-stopped
 
   hbbr:
@@ -25,24 +24,24 @@ services:
     command: hbbr
     volumes:
       - ./data:/root
-    network_mode: "host"
+    network_mode: host
     restart: unless-stopped
 EOF
 
-# Открываем минимально необходимые порты RustDesk
-sudo ufw allow 21115/tcp   # RustDesk NAT type test
-sudo ufw allow 21116/tcp   # RustDesk TCP hole punching / connection service
-sudo ufw allow 21116/udp   # RustDesk ID registration / heartbeat
-sudo ufw allow 21117/tcp   # RustDesk relay service
-
-# Запускаем RustDesk Server
+ufw allow 21115:21117/tcp
+ufw allow 21116/udp
 docker compose up -d
 
-# Проверяем контейнеры
-docker compose ps
+for _ in {1..30}; do
+    [ -s data/id_ed25519.pub ] && break
+    sleep 1
+done
 
-# Показываем публичный ключ сервера синим цветом, его нужно вставить в клиенты RustDesk
-echo
-printf '\033[1;34m%s\033[0m\n' "===== RustDesk server public key ====="
-printf '\033[1;34m%s\033[0m\n' "$(cat ./data/id_ed25519.pub)"
-printf '\033[1;34m%s\033[0m\n' "======================================"
+[ -s data/id_ed25519.pub ] || { docker compose logs; exit 1; }
+docker compose ps
+printf '\nRustDesk server public key:\n%s\n' "$(<data/id_ed25519.pub)"
+
+printf '\n\033[1;32m%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    ' RustDesk Server deployed successfully.' \
+    '============================================================'

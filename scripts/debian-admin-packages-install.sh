@@ -1,27 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Определяем, нужен ли sudo
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=""
-else
-    SUDO="sudo"
-fi
-
-# Обновляем список пакетов
-$SUDO apt update
-
-# Обновляем установленные пакеты
-$SUDO apt upgrade -y
-
-# Устанавливаем расширенный админский набор без
-$SUDO apt install -y \
+apt-get update
+apt-get install -y \
     sudo \
-    curl \
     ca-certificates \
-    gnupg \
+    curl \
     git \
     nano \
     less \
@@ -36,15 +24,9 @@ $SUDO apt install -y \
     netcat-openbsd \
     socat \
     htop \
-    rsync \
-    fastfetch \
-    ranger \
-    build-essential \
-    autotools-dev \
-    automake
+    rsync
 
-# Выводим сообщение об успешном выполнении в зелёной рамке
-echo
-printf '\033[1;32m%s\033[0m\n' "============================================================"
-printf '\033[1;32m%s\033[0m\n' " Debian admin package set installed successfully."
-printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\n\033[1;32m%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    ' Debian admin packages installed successfully.' \
+    '============================================================'

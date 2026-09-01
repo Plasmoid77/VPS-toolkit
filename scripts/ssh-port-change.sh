@@ -58,7 +58,9 @@ fi
 
 if ! systemctl reload ssh; then
     restore_config
-    sshd -t && systemctl reload ssh || true
+    if sshd -t; then
+        systemctl reload ssh || true
+    fi
     echo "SSH reload failed; original files restored." >&2
     exit 1
 fi

@@ -1,115 +1,80 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-# Определяем, нужен ли sudo
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=()
-else
-    SUDO=(sudo)
-fi
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
 NEW_SSH_PORT="${1:-}"
 
-# Проверяем, что порт передан
-if [ -z "$NEW_SSH_PORT" ]; then
-    echo "Usage: ssh-port-change.sh NEW_SSH_PORT"
-    echo "Example: ssh-port-change.sh 41337"
+if [[ ! "$NEW_SSH_PORT" =~ ^[0-9]+$ ]]; then
+    echo "Usage: ssh-port-change.sh PORT" >&2
     exit 1
 fi
 
-# Проверяем, что порт является числом от 1 до 65535
-if ! echo "$NEW_SSH_PORT" | grep -Eq '^[0-9]+$' || [ "$NEW_SSH_PORT" -lt 1 ] || [ "$NEW_SSH_PORT" -gt 65535 ]; then
-    echo "Invalid SSH port: $NEW_SSH_PORT"
-    echo "Use a number from 1 to 65535."
+NEW_SSH_PORT=$((10#$NEW_SSH_PORT))
+if (( NEW_SSH_PORT < 1 || NEW_SSH_PORT > 65535 )); then
+    echo "Usage: ssh-port-change.sh PORT" >&2
     exit 1
 fi
 
-SSH_CONFIG="/etc/ssh/sshd_config"
-SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
-SSH_PORT_CONFIG="${SSH_CONFIG_DIR}/99-vps-toolkit-port.conf"
-BACKUP_DIR="/etc/ssh/vps-toolkit-backups/$(date +%F-%H%M%S)"
+SSH_CONFIG=/etc/ssh/sshd_config
+SSH_CONFIG_DIR=/etc/ssh/sshd_config.d
+SSH_PORT_CONFIG=$SSH_CONFIG_DIR/99-vps-toolkit-port.conf
+PORT_CONFIG_EXISTED=0
 
-# Создаём backup SSH-конфигурации
-"${SUDO[@]}" mkdir -p "$BACKUP_DIR"
-"${SUDO[@]}" cp "$SSH_CONFIG" "$BACKUP_DIR/sshd_config"
+mkdir -p /etc/ssh/vps-toolkit-backups
+BACKUP_DIR="$(mktemp -d "/etc/ssh/vps-toolkit-backups/$(date +%F-%H%M%S).XXXXXX")"
 
-if [ -d "$SSH_CONFIG_DIR" ]; then
-    "${SUDO[@]}" cp -a "$SSH_CONFIG_DIR" "$BACKUP_DIR/sshd_config.d"
-fi
+restore_config() {
+    cp -a "$BACKUP_DIR/sshd_config" "$SSH_CONFIG"
+    [ ! -d "$BACKUP_DIR/sshd_config.d" ] || cp -a "$BACKUP_DIR/sshd_config.d/." "$SSH_CONFIG_DIR/"
+    [ "$PORT_CONFIG_EXISTED" -eq 1 ] || rm -f "$SSH_PORT_CONFIG"
+}
 
-# Создаём директорию для drop-in SSH-конфигов
-"${SUDO[@]}" mkdir -p "$SSH_CONFIG_DIR"
+[ -e "$SSH_PORT_CONFIG" ] && PORT_CONFIG_EXISTED=1
+cp -a "$SSH_CONFIG" "$BACKUP_DIR/sshd_config"
+[ ! -d "$SSH_CONFIG_DIR" ] || cp -a "$SSH_CONFIG_DIR" "$BACKUP_DIR/sshd_config.d"
+mkdir -p "$SSH_CONFIG_DIR"
 
-# Добавляем Include для sshd_config.d, если его нет
-if ! grep -Eq '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf' "$SSH_CONFIG"; then
-    TMP_FILE="$(mktemp)"
-    {
-        echo "Include /etc/ssh/sshd_config.d/*.conf"
-        cat "$SSH_CONFIG"
-    } > "$TMP_FILE"
-    "${SUDO[@]}" cp "$TMP_FILE" "$SSH_CONFIG"
-    rm -f "$TMP_FILE"
-fi
+grep -Eq '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf' "$SSH_CONFIG" || \
+    sed -i '1iInclude /etc/ssh/sshd_config.d/*.conf' "$SSH_CONFIG"
 
-# Открываем новый SSH-порт в UFW через limit, чтобы добавить базовую защиту от brutforce
-# Старые UFW-правила скрипт не удаляет
-if command -v ufw >/dev/null 2>&1; then
-    "${SUDO[@]}" ufw limit "${NEW_SSH_PORT}/tcp" comment "SSH with basic brutforce protection"
-fi
-
-# Комментируем старые активные Port-строки, чтобы SSH слушал только новый порт
 for file in "$SSH_CONFIG" "$SSH_CONFIG_DIR"/*.conf; do
     [ -f "$file" ] || continue
     [ "$file" = "$SSH_PORT_CONFIG" ] && continue
-
-    "${SUDO[@]}" sed -i -E '/^[[:space:]]*Port[[:space:]]+[0-9]+/ s/^/# VPS-toolkit disabled: /' "$file"
+    sed -i -E '/^[[:space:]]*Port[[:space:]]+[0-9]+/ s/^/# VPS-toolkit disabled: /' "$file"
 done
 
-# Создаём отдельный SSH-конфиг с новым портом
-{
-    echo "# Managed by VPS-toolkit"
-    echo "Port $NEW_SSH_PORT"
-} | "${SUDO[@]}" tee "$SSH_PORT_CONFIG" > /dev/null
+printf '# Managed by VPS-toolkit\nPort %s\n' "$NEW_SSH_PORT" > "$SSH_PORT_CONFIG"
 
-# Проверяем SSH-конфигурацию перед применением
-"${SUDO[@]}" sshd -t
-
-# Перезагружаем SSH без разрыва текущей сессии
-"${SUDO[@]}" systemctl reload ssh 2>/dev/null || \
-"${SUDO[@]}" systemctl reload sshd 2>/dev/null || \
-"${SUDO[@]}" service ssh reload 2>/dev/null || \
-"${SUDO[@]}" service sshd reload
-
-# Если есть локальный Fail2Ban-конфиг для SSH, обновляем в нём порт
-if [ -f "/etc/fail2ban/jail.d/sshd.local" ]; then
-    "${SUDO[@]}" sed -i -E "s|^[[:space:]]*port[[:space:]]*=.*|port = ${NEW_SSH_PORT}  ; SSH port managed by VPS-toolkit|" /etc/fail2ban/jail.d/sshd.local
-
-    if command -v fail2ban-client >/dev/null 2>&1; then
-        "${SUDO[@]}" fail2ban-client -t
-        "${SUDO[@]}" systemctl restart fail2ban
-    fi
+if ! sshd -t; then
+    restore_config
+    echo "Invalid SSH configuration; original files restored." >&2
+    exit 1
 fi
 
-# Показываем эффективные SSH-порты
-echo
-echo "Effective SSH port(s):"
-"${SUDO[@]}" sshd -T 2>/dev/null | awk '$1 == "port" {print "  " $2}'
-
-# Проверяем, слушает ли sshd новый порт
-echo
-echo "SSH listener check:"
-ss -tuln | grep ":${NEW_SSH_PORT} " || true
-
-# Показываем UFW-статус
 if command -v ufw >/dev/null 2>&1; then
-    echo
-    "${SUDO[@]}" ufw status numbered
+    ufw limit "$NEW_SSH_PORT/tcp" comment 'SSH brute-force protection'
 fi
 
-echo
-printf '\033[1;32m%s\033[0m\n' "============================================================"
-printf '\033[1;32m%s\033[0m\n' " SSH port changed successfully to: ${NEW_SSH_PORT}"
-printf '\033[1;32m%s\033[0m\n' " Keep this session open and test a new SSH login first."
-printf '\033[1;32m%s\033[0m\n' "============================================================"
+if ! systemctl reload ssh; then
+    restore_config
+    if sshd -t; then
+        systemctl reload ssh || true
+    fi
+    echo "SSH reload failed; original files restored." >&2
+    exit 1
+fi
+
+if [ -f /etc/fail2ban/jail.d/sshd.local ]; then
+    sed -i -E "s|^[[:space:]]*port[[:space:]]*=.*|port = $NEW_SSH_PORT|" /etc/fail2ban/jail.d/sshd.local
+    fail2ban-client -t
+    systemctl restart fail2ban
+fi
+
+sshd -T | awk '$1 == "port" {print "Effective SSH port: " $2}'
+
+printf '\n\033[1;32m%s\n%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    " SSH port changed successfully to $NEW_SSH_PORT." \
+    ' Keep this session open and test a new SSH login.' \
+    '============================================================'

@@ -1,47 +1,20 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
-# Определяем, нужен ли sudo
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=()
-else
-    SUDO=(sudo)
-fi
-
-# Берём новое имя хоста из первого аргумента
 NEW_HOSTNAME="${1:-}"
 
-# Если аргумент не передан — показываем пример использования и выходим
-if [ -z "$NEW_HOSTNAME" ]; then
-    echo "Usage: hostname-change.sh NEW_HOSTNAME"
-    echo "Example: hostname-change.sh ordinary-coffee"
+if [[ ! "$NEW_HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ ]]; then
+    echo "Usage: hostname-change.sh NEW_HOSTNAME" >&2
     exit 1
 fi
 
-# Проверяем, что hostname состоит только из допустимых символов
-if ! echo "$NEW_HOSTNAME" | grep -Eq '^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$'; then
-    echo "Invalid hostname: $NEW_HOSTNAME"
-    echo "Use letters, numbers, dots or hyphens. Do not start or end with dot/hyphen."
-    exit 1
-fi
+sed -i "s/^127\.0\.1\.1[[:space:]].*/127.0.1.1 $NEW_HOSTNAME/" /etc/hosts
+grep -q '^127\.0\.1\.1[[:space:]]' /etc/hosts || echo "127.0.1.1 $NEW_HOSTNAME" >> /etc/hosts
+hostnamectl set-hostname "$NEW_HOSTNAME"
 
-# Сначала обновляем /etc/hosts, чтобы после hostnamectl не было предупреждения:
-# sudo: unable to resolve host NEW_HOSTNAME
-"${SUDO[@]}" sed -i "/^127.0.1.1/d" /etc/hosts
-echo "127.0.1.1 $NEW_HOSTNAME" | "${SUDO[@]}" tee -a /etc/hosts > /dev/null
-
-# Затем задаём новое имя хоста
-"${SUDO[@]}" hostnamectl set-hostname "$NEW_HOSTNAME"
-
-# Проверяем результат
-hostnamectl status
-hostname
-grep "127.0.1.1" /etc/hosts
-
-# Выводим сообщение об успешном выполнении в зелёной рамке
-echo
-printf '\033[1;32m%s\033[0m\n' "============================================================"
-printf '\033[1;32m%s\033[0m\n' " Hostname changed successfully to: $NEW_HOSTNAME"
-printf '\033[1;32m%s\033[0m\n' "============================================================"
+printf '\n\033[1;32m%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    " Hostname changed successfully to $NEW_HOSTNAME." \
+    '============================================================'

@@ -1,111 +1,46 @@
 #!/usr/bin/env bash
-set -e
-set -o pipefail
+set -euo pipefail
 
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-BASE_URL="https://codeberg.org/Plasmoid28/VPS-toolkit/raw/branch/main/scripts"
+[ "$EUID" -eq 0 ] || { echo "Run this script as root." >&2; exit 1; }
 
 NEW_HOSTNAME="${1:-}"
 NEW_SSH_PORT="${2:-}"
 
-BLUE_BOLD="\033[1;34m"
-GREEN_BOLD="\033[1;32m"
-RESET="\033[0m"
-
-# Определяем, нужен ли sudo
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=()
-else
-    SUDO=(sudo)
+if [[ ! "$NEW_HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ ]] ||
+   [[ ! "$NEW_SSH_PORT" =~ ^[0-9]+$ ]]; then
+    echo "Usage: vps-basic-setup.sh NEW_HOSTNAME NEW_SSH_PORT" >&2
+    exit 1
 fi
 
-step() {
-    echo
-    printf "${BLUE_BOLD}%s${RESET}\n" "===== $1 ====="
-}
+NEW_SSH_PORT=$((10#$NEW_SSH_PORT))
+if (( NEW_SSH_PORT < 1 || NEW_SSH_PORT > 65535 )); then
+    echo "Usage: vps-basic-setup.sh NEW_HOSTNAME NEW_SSH_PORT" >&2
+    exit 1
+fi
 
-success_box() {
-    echo
-    printf "${GREEN_BOLD}%s${RESET}\n" "============================================================"
-    printf "${GREEN_BOLD}%s${RESET}\n" " Basic VPS deployment completed successfully."
-    printf "${GREEN_BOLD}%s${RESET}\n" " Hostname: ${NEW_HOSTNAME}"
-    printf "${GREEN_BOLD}%s${RESET}\n" " SSH port: ${NEW_SSH_PORT}"
-    printf "${GREEN_BOLD}%s${RESET}\n" "============================================================"
-}
+TOOLKIT_DIR="$(mktemp -d)"
+trap 'rm -rf "$TOOLKIT_DIR"' EXIT
+curl -fsSL https://github.com/Plasmoid77/VPS-toolkit/archive/refs/heads/main.tar.gz |
+    tar -xz -C "$TOOLKIT_DIR" --strip-components=1
 
 run_script() {
-    SCRIPT_NAME="$1"
-    wget -qO- "${BASE_URL}/${SCRIPT_NAME}" | "${SUDO[@]}" bash
-}
-
-run_script_with_args() {
-    SCRIPT_NAME="$1"
+    local script="$1"
     shift
-    wget -qO- "${BASE_URL}/${SCRIPT_NAME}" | "${SUDO[@]}" bash -s -- "$@"
+    bash "$TOOLKIT_DIR/scripts/$script" "$@"
 }
 
-# Проверяем, что wget установлен
-if ! command -v wget >/dev/null 2>&1; then
-    echo "wget is not installed."
-    echo "Run as root:"
-    echo "apt install -y wget"
-    exit 1
-fi
+run_script debian-admin-packages-install.sh
+run_script hostname-change.sh "$NEW_HOSTNAME"
+run_script apt-auto-upgrades.sh
+run_script ssh-port-change.sh "$NEW_SSH_PORT"
+run_script ufw-basic-setup.sh
+run_script fail2ban-setup.sh
+run_script security-check-setup.sh
+run_script bbr-enable.sh
 
-# Проверяем, что hostname передан
-if [ -z "$NEW_HOSTNAME" ]; then
-    echo "Usage: vps-basic-setup.sh NEW_HOSTNAME NEW_SSH_PORT"
-    echo "Example: vps-basic-setup.sh ordinary-coffee 41337"
-    exit 1
-fi
-
-# Проверяем, что SSH-порт передан
-if [ -z "$NEW_SSH_PORT" ]; then
-    echo "Usage: vps-basic-setup.sh NEW_HOSTNAME NEW_SSH_PORT"
-    echo "Example: vps-basic-setup.sh ordinary-coffee 41337"
-    exit 1
-fi
-
-# Проверяем hostname до запуска остальных скриптов
-if ! echo "$NEW_HOSTNAME" | grep -Eq '^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$'; then
-    echo "Invalid hostname: $NEW_HOSTNAME"
-    echo "Use letters, numbers, dots or hyphens. Do not start or end with dot/hyphen."
-    exit 1
-fi
-
-# Проверяем SSH-порт до запуска остальных скриптов
-if ! echo "$NEW_SSH_PORT" | grep -Eq '^[0-9]+$' || [ "$NEW_SSH_PORT" -lt 1 ] || [ "$NEW_SSH_PORT" -gt 65535 ]; then
-    echo "Invalid SSH port: $NEW_SSH_PORT"
-    echo "Use a number from 1 to 65535."
-    exit 1
-fi
-
-step "1. Installing Debian admin package set"
-run_script "debian-admin-packages-install.sh"
-
-step "2. Changing hostname"
-run_script_with_args "hostname-change.sh" "$NEW_HOSTNAME"
-
-step "3. Configuring automatic APT security updates"
-run_script "apt-auto-upgrades.sh"
-
-step "4. Changing SSH port and adding UFW LIMIT rule"
-run_script_with_args "ssh-port-change.sh" "$NEW_SSH_PORT"
-
-step "5. Enabling basic UFW firewall"
-run_script "ufw-basic-setup.sh"
-
-step "6. Installing and configuring Fail2Ban"
-run_script "fail2ban-setup.sh"
-
-step "7. Installing security-check monitoring"
-run_script "security-check-setup.sh"
-
-step "8. Enabling BBR"
-run_script "bbr-enable.sh"
-
-step "9. Disabling incoming ping"
-run_script "ufw-disable-ping.sh"
-
-success_box
+printf '\n\033[1;32m%s\n%s\n%s\n%s\n%s\033[0m\n' \
+    '============================================================' \
+    ' Basic VPS deployment completed successfully.' \
+    " Hostname: $NEW_HOSTNAME" \
+    " SSH port: $NEW_SSH_PORT" \
+    '============================================================'

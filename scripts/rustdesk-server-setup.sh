@@ -28,8 +28,8 @@ services:
     restart: unless-stopped
 EOF
 
-ufw allow 21115:21117/tcp
-ufw allow 21116/udp
+ufw allow 21115:21117/tcp comment 'RustDesk NAT test, ID registry and relay'
+ufw allow 21116/udp comment 'RustDesk hole punching'
 docker compose up -d
 
 for _ in {1..30}; do

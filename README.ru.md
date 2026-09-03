@@ -343,3 +343,7 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 Каждый push и pull request запускает `.github/workflows/shellcheck.yml`: все скрипты проверяются через `bash -n` и ShellCheck.
 
 Скрипты рассчитаны на Debian VPS. Это не универсальный cross-distribution provisioning framework и не замена snapshot провайдера, проверенным backup или configuration management.
+
+## Лицензия
+
+GPL-3.0-or-later — см. [LICENSE](LICENSE).

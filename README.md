@@ -347,3 +347,7 @@ Blocking echo requests provides little hardening value and reduces observability
 Every push and pull request runs `.github/workflows/shellcheck.yml`, which checks all scripts with `bash -n` and ShellCheck.
 
 The scripts are intended for Debian VPS hosts. They are not a generic cross-distribution provisioning framework and do not replace provider snapshots, tested backups or a configuration-management system.
+
+## License
+
+GPL-3.0-or-later — see [LICENSE](LICENSE).

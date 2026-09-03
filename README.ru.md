@@ -279,13 +279,13 @@ sudo docker compose version
 
 ## RustDesk Server
 
-Требования: Docker Engine с Compose plugin и UFW.
+Требования: Docker Engine с Compose plugin.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/rustdesk-server-setup.sh | sudo bash
 ```
 
-Скрипт создаёт `/root/rustdeskdocker/docker-compose.yml`, запускает `hbbs` и `hbbr` с host networking и хранит ключи/данные в `/root/rustdeskdocker/data`.
+Скрипт создаёт `/root/rustdeskdocker/docker-compose.yml`, запускает `hbbs` и `hbbr` в выделенной bridge-сети с публикацией портов — как в официальном compose-файле RustDesk — и хранит ключи/данные в `/root/rustdeskdocker/data`.
 
 | Порт | Протокол | Назначение |
 |---:|---|---|
@@ -295,11 +295,19 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 
 Это минимальные порты RustDesk. WebSocket-порты `21118`/`21119` не открываются. После старта скрипт ждёт появления и выводит `data/id_ed25519.pub`; этот ключ нужно настроить в клиентах RustDesk.
 
-### Почему host networking, а не официальный compose-файл
+### Поведение firewall
 
-Официальный compose-файл RustDesk помещает контейнеры в bridge-сеть и публикует порты через `ports:`. Это ровно тот случай, о котором предупреждает [документация Docker](https://docs.docker.com/engine/install/debian/#firewall-limitations) выше: Docker пишет собственные правила iptables, опубликованные порты доступны в обход UFW, и правила `ufw allow` из этого скрипта стали бы декоративными — порты были бы открыты в интернет независимо от того, разрешает их UFW или нет.
+Скрипт не добавляет правил UFW, и они ему не нужны. Docker публикует порты выше сам, в обход UFW — как предупреждает [документация Docker](https://docs.docker.com/engine/install/debian/#firewall-limitations) — и это ровно те порты, которые обязаны быть доступны из интернета, иначе клиенты RustDesk не подключатся. Опубликованный набор и есть вся публичная поверхность: больше ничего не открыто.
 
-С `network_mode: host` контейнеры слушают напрямую на хосте, публикации портов через Docker не происходит, и доступ к `21115-21117` реально определяет UFW. Плата за это — контейнеры разделяют сетевое пространство имён хоста: у них нет сетевой изоляции, а порты нельзя переназначить. Для сервера, выделенного под RustDesk, размен выгодный; если нужна изоляция или другие порты, используй официальный compose-файл и фильтруй через цепочку `DOCKER-USER`, а не через UFW.
+Следствие: `ufw allow`/`ufw deny` этими портами не управляют. Чтобы ограничить их конкретными адресами, правила пишутся в цепочку `DOCKER-USER`:
+
+```bash
+sudo iptables -I DOCKER-USER -p tcp --dport 21115:21117 ! -s 203.0.113.0/24 -j DROP
+```
+
+Контейнеры работают в выделенной bridge-сети, а не с `network_mode: host`, поэтому каждый сохраняет собственное сетевое пространство имён. Скомпрометированный контейнер не дотянется до сервисов, слушающих на `127.0.0.1` хоста — это существенно, если на той же машине работают loopback-сервисы вроде SOCKS-прокси Tor или консоли i2pd.
+
+Если раньше запускалась версия скрипта с host networking, её ставшие ненужными правила UFW удаляются через `sudo ufw status numbered` и `sudo ufw delete <номер>`.
 
 ```bash
 cd /root/rustdeskdocker

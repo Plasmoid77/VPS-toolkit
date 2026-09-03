@@ -7,29 +7,47 @@ WORKDIR=/root/rustdeskdocker
 install -d "$WORKDIR"
 cd "$WORKDIR"
 
+# Bridge network with published ports, as in RustDesk's official compose file:
+# each container keeps its own network namespace, so a compromised container
+# cannot reach services bound to 127.0.0.1 on the host. No UFW rules are added
+# because Docker publishes these ports itself, past UFW -- and they are exactly
+# the ports that must be reachable from the internet anyway. To restrict them
+# to specific sources later, use the DOCKER-USER chain; UFW cannot do it.
 cat > docker-compose.yml <<'EOF'
+networks:
+  rustdesk-net:
+    external: false
+
 services:
   hbbs:
     container_name: hbbs
     image: rustdesk/rustdesk-server:latest
     command: hbbs
+    ports:
+      - 21115:21115
+      - 21116:21116
+      - 21116:21116/udp
     volumes:
       - ./data:/root
-    network_mode: host
+    networks:
+      - rustdesk-net
+    depends_on:
+      - hbbr
     restart: unless-stopped
 
   hbbr:
     container_name: hbbr
     image: rustdesk/rustdesk-server:latest
     command: hbbr
+    ports:
+      - 21117:21117
     volumes:
       - ./data:/root
-    network_mode: host
+    networks:
+      - rustdesk-net
     restart: unless-stopped
 EOF
 
-ufw allow 21115:21117/tcp comment 'RustDesk NAT test, ID registry and relay'
-ufw allow 21116/udp comment 'RustDesk hole punching'
 docker compose up -d
 
 for _ in {1..30}; do

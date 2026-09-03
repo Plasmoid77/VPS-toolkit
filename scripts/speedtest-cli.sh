@@ -5,6 +5,7 @@ set -euo pipefail
 
 apt-get update
 apt-get install -y curl
+# Packagecloud's official installer script, unpinned (curl | bash, no checksum).
 curl -fsSL https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash
 apt-get install -y speedtest
 speedtest --accept-license --accept-gdpr

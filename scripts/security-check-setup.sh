@@ -9,6 +9,8 @@ systemctl enable --now cron
 
 cat > /usr/local/bin/security-check.sh <<'EOF'
 #!/usr/bin/env bash
+# No -e: this is a report, so one failing sub-command (e.g. fail2ban not
+# installed) must not abort the rest of the checks.
 set -uo pipefail
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

@@ -8,6 +8,8 @@ apt-get install -y fail2ban
 
 SSH_PORTS="$(sshd -T | awk '$1 == "port" {print $2}' | sort -nu | paste -sd, -)"
 
+# Full overwrite, not a merge: any manual edits to this file from a previous
+# run or by hand are discarded here.
 cat > /etc/fail2ban/jail.d/sshd.local <<EOF
 [sshd]
 enabled = true

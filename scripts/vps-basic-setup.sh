@@ -20,6 +20,8 @@ fi
 
 TOOLKIT_DIR="$(mktemp -d)"
 trap 'rm -rf "$TOOLKIT_DIR"' EXIT
+# Trust-on-first-use: no checksum/signature check against the archive. Acceptable
+# because the caller already trusts this repository enough to run it as root.
 curl -fsSL https://github.com/Plasmoid77/VPS-toolkit/archive/refs/heads/main.tar.gz |
     tar -xz -C "$TOOLKIT_DIR" --strip-components=1
 

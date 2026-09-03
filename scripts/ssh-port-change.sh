@@ -53,6 +53,8 @@ if ! sshd -t; then
 fi
 
 if command -v ufw >/dev/null 2>&1; then
+    # Old port's UFW rule is intentionally left in place so a broken new port
+    # can't lock the caller out; remove it manually after confirming the new login works.
     ufw limit "$NEW_SSH_PORT/tcp" comment 'SSH brute-force protection'
 fi
 

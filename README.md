@@ -299,6 +299,12 @@ The script writes `/root/rustdeskdocker/docker-compose.yml`, starts `hbbs` and `
 
 These are the minimum RustDesk ports. WebSocket ports `21118` and `21119` are not opened. After startup, the script waits for and prints `data/id_ed25519.pub`, which must be configured in RustDesk clients.
 
+### Why host networking instead of the official compose file
+
+RustDesk's official compose file puts both containers on a bridge network and publishes the ports with a `ports:` mapping. That mapping is the case described in [Docker's firewall warning](https://docs.docker.com/engine/install/debian/#firewall-limitations) above: Docker writes its own iptables rules, published ports reach the containers regardless of UFW, and the `ufw allow` rules this script adds would be decorative — the ports would be open to the internet whether or not UFW permitted them.
+
+With `network_mode: host` the containers bind directly on the host, no Docker port publishing happens, and UFW is genuinely the thing deciding who reaches `21115-21117`. The trade-off is that the containers share the host network namespace, so they get no network isolation and their ports cannot be remapped. For a single-purpose RustDesk host that is the better side of the trade; if you need isolation or remapped ports, use the official compose file and filter through the `DOCKER-USER` chain instead of UFW.
+
 ```bash
 cd /root/rustdeskdocker
 sudo docker compose ps

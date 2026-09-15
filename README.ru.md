@@ -10,21 +10,15 @@
 
 - Debian с systemd
 - root-доступ
-- `curl` для однострочных команд
+- `wget` для однострочных команд
 - действующая SSH-сессия, которую можно оставить открытой на время проверки изменений SSH/UFW
 
 Все административные скрипты останавливаются до внесения изменений, если запущены не от root. Повышенные права не нужны только для `ip-quality-check.sh`.
 
-Однострочные команды ниже написаны для администратора, работающего через `sudo`. На свежем минимальном Debian VPS обычно нет ни `sudo`, ни `curl`, а первый вход выполняется в shell `root`. В этом случае уберите `sudo` и сначала установите `curl`:
-
-```bash
-apt-get update && apt-get install -y curl
-```
-
 Перед передачей удалённого скрипта в root Bash его можно скачать и проверить:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh -o /tmp/ssh-port-change.sh
+wget -qO /tmp/ssh-port-change.sh https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh
 less /tmp/ssh-port-change.sh
 sudo bash /tmp/ssh-port-change.sh 41337
 ```
@@ -57,14 +51,14 @@ sudo bash /tmp/ssh-port-change.sh 41337
 Замени `SCRIPT_NAME.sh` на нужный скрипт:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/SCRIPT_NAME.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/SCRIPT_NAME.sh | sudo bash
 ```
 
 Аргументы передаются после `bash -s --`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
 ```
 
 ## Базовая настройка VPS
@@ -72,13 +66,7 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 Скрипт принимает новый hostname и SSH-порт:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
-```
-
-На свежем VPS под `root`, где `sudo` и `curl` ещё не установлены:
-
-```bash
-apt-get update && apt-get install -y curl && curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | bash -s -- ordinary-coffee 41337
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
 ```
 
 Он загружает один архив репозитория, поэтому все дочерние скрипты берутся из одного snapshot, а затем выполняет:
@@ -105,7 +93,7 @@ ssh root@SERVER_IP -p 41337
 ## Админские пакеты Debian
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/debian-admin-packages-install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/debian-admin-packages-install.sh | sudo bash
 ```
 
 Скрипт обновляет метаданные APT и устанавливает пакеты, не обновляя целиком операционную систему:
@@ -131,7 +119,7 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 ## Смена hostname
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 ```
 
 Аргумент должен начинаться и заканчиваться буквой или цифрой; внутри допустимы буквы, цифры, точки и дефисы. Скрипт обновляет или создаёт строку `127.0.1.1` в `/etc/hosts`, затем применяет hostname через `hostnamectl`.
@@ -144,7 +132,7 @@ grep '^127.0.1.1' /etc/hosts
 ## Автоматические security-обновления APT
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/apt-auto-upgrades.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/apt-auto-upgrades.sh | sudo bash
 ```
 
 Скрипт устанавливает `unattended-upgrades`, включает таймеры `apt-daily`/`apt-daily-upgrade` и создаёт:
@@ -162,7 +150,7 @@ sudo less /var/log/unattended-upgrades/unattended-upgrades.log
 ## Смена SSH-порта
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
 ```
 
 Порт должен быть целым числом от `1` до `65535`. Последовательность действий:
@@ -188,7 +176,7 @@ sudo ufw status numbered
 ## Базовый firewall UFW
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-basic-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-basic-setup.sh | sudo bash
 ```
 
 Скрипт выполняет:
@@ -204,7 +192,7 @@ enable UFW
 ## Fail2Ban для SSH
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/fail2ban-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/fail2ban-setup.sh | sudo bash
 ```
 
 Фактический SSH-порт читается из `sshd -T` и записывается в `/etc/fail2ban/jail.d/sshd.local`.
@@ -225,7 +213,7 @@ sudo fail2ban-client status sshd
 ## Ежедневный security-отчёт
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/security-check-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/security-check-setup.sh | sudo bash
 ```
 
 Устанавливается `/usr/local/bin/security-check.sh`, включается cron и добавляется root-задача на `09:00`. Отчёт содержит:
@@ -250,13 +238,13 @@ sudo crontab -l
 Включить BBR:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-enable.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-enable.sh | sudo bash
 ```
 
 Отключить BBR и использовать распространённые значения Debian:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-disable.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-disable.sh | sudo bash
 ```
 
 Оба скрипта управляют `/etc/sysctl.d/99-bbr-vps-toolkit.conf` и применяют только этот файл. Включение задаёт `fq` + `bbr`, отключение — `fq_codel` + `cubic`. Неподдерживаемые параметры ядра завершают скрипт с ошибкой вместо молчаливого выбора случайного fallback.
@@ -268,7 +256,7 @@ sysctl net.core.default_qdisc net.ipv4.tcp_congestion_control
 ## Docker Engine и Compose
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/docker-debian-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/docker-debian-setup.sh | sudo bash
 ```
 
 Скрипт использует официальный Debian APT-метод Docker:
@@ -294,7 +282,7 @@ sudo docker compose version
 Требования: Docker Engine с Compose plugin.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/rustdesk-server-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/rustdesk-server-setup.sh | sudo bash
 ```
 
 Скрипт создаёт `/root/rustdeskdocker/docker-compose.yml`, запускает `hbbs` и `hbbr` в выделенной bridge-сети с публикацией портов — как в официальном compose-файле RustDesk — и хранит ключи/данные в `/root/rustdeskdocker/data`.
@@ -331,7 +319,7 @@ sudo cat data/id_ed25519.pub
 ## Ookla Speedtest
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/speedtest-cli.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/speedtest-cli.sh | sudo bash
 ```
 
 Скрипт подключает Ookla Packagecloud, устанавливает официальный пакет `speedtest` и принимает license/GDPR для первого запуска.
@@ -341,7 +329,7 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 Root не требуется:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ip-quality-check.sh | bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ip-quality-check.sh | bash
 ```
 
 Обёртка загружает внешний скрипт IP.Check.Place и запускает его на английском с неинтерактивными параметрами. Перед использованием на чувствительном сервере проверь upstream-сервис.
@@ -351,13 +339,13 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 Отключить входящие IPv4/IPv6 echo request:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-disable-ping.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-disable-ping.sh | sudo bash
 ```
 
 Восстановить:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-enable-ping.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-enable-ping.sh | sudo bash
 ```
 
 Скрипты меняют только echo-request правила в `/etc/ufw/before.rules` и `/etc/ufw/before6.rules`, проверяют ожидаемые строки и перезагружают UFW. Остальной ICMP/ICMPv6, необходимый для нормальной работы сети, не меняется.

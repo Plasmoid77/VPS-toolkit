@@ -18,17 +18,11 @@ if (( NEW_SSH_PORT < 1 || NEW_SSH_PORT > 65535 )); then
     exit 1
 fi
 
-if ! command -v curl >/dev/null 2>&1; then
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update
-    apt-get install -y curl
-fi
-
 TOOLKIT_DIR="$(mktemp -d)"
 trap 'rm -rf "$TOOLKIT_DIR"' EXIT
 # Trust-on-first-use: no checksum/signature check against the archive. Acceptable
 # because the caller already trusts this repository enough to run it as root.
-curl -fsSL https://github.com/Plasmoid77/VPS-toolkit/archive/refs/heads/main.tar.gz |
+wget -qO- https://github.com/Plasmoid77/VPS-toolkit/archive/refs/heads/main.tar.gz |
     tar -xz -C "$TOOLKIT_DIR" --strip-components=1
 
 run_script() {

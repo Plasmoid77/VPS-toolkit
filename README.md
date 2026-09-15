@@ -10,21 +10,15 @@ The scripts deliberately target Debian with systemd. They do not try to guess th
 
 - Debian with systemd
 - root access
-- `curl` for the remote one-line commands
+- `wget` for the remote one-line commands
 - an existing SSH session that can remain open while SSH/UFW changes are tested
 
 All administrative scripts stop before making changes unless they run as root. `ip-quality-check.sh` is the only script that does not require elevated privileges.
 
-The one-line commands below are written for an administrator who works through `sudo`. A fresh minimal Debian VPS usually has neither `sudo` nor `curl`, and the first login is the `root` shell. In that case omit `sudo` and install `curl` first:
-
-```bash
-apt-get update && apt-get install -y curl
-```
-
 Before piping a remote script into root Bash, inspect it if the server or repository is not under your control:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh -o /tmp/ssh-port-change.sh
+wget -qO /tmp/ssh-port-change.sh https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh
 less /tmp/ssh-port-change.sh
 sudo bash /tmp/ssh-port-change.sh 41337
 ```
@@ -57,14 +51,14 @@ Every successful script ends with a green framed status message. If a command fa
 Replace `SCRIPT_NAME.sh` with the required script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/SCRIPT_NAME.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/SCRIPT_NAME.sh | sudo bash
 ```
 
 Arguments are passed after `bash -s --`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
 ```
 
 ## Basic VPS deployment
@@ -72,13 +66,7 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 The basic deployment script accepts a new hostname and SSH port:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
-```
-
-On a fresh VPS as `root`, where `sudo` and `curl` are not installed yet:
-
-```bash
-apt-get update && apt-get install -y curl && curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | bash -s -- ordinary-coffee 41337
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
 ```
 
 It downloads one repository archive so every child script comes from the same snapshot, then runs:
@@ -105,7 +93,7 @@ ssh root@SERVER_IP -p 41337
 ## Debian administration packages
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/debian-admin-packages-install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/debian-admin-packages-install.sh | sudo bash
 ```
 
 The script refreshes APT metadata and installs the following packages without upgrading the whole operating system:
@@ -131,7 +119,7 @@ The script refreshes APT metadata and installs the following packages without up
 ## Hostname change
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/hostname-change.sh | sudo bash -s -- ordinary-coffee
 ```
 
 The argument must start and end with a letter or digit and may contain letters, digits, dots and hyphens. The script updates or creates the `127.0.1.1` entry in `/etc/hosts`, then applies the hostname through `hostnamectl`.
@@ -146,7 +134,7 @@ grep '^127.0.1.1' /etc/hosts
 ## Automatic APT security updates
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/apt-auto-upgrades.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/apt-auto-upgrades.sh | sudo bash
 ```
 
 The script installs `unattended-upgrades`, enables the `apt-daily` and `apt-daily-upgrade` timers, and writes:
@@ -166,7 +154,7 @@ sudo less /var/log/unattended-upgrades/unattended-upgrades.log
 ## SSH port change
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ssh-port-change.sh | sudo bash -s -- 41337
 ```
 
 The port must be an integer from `1` to `65535`. The script performs the following sequence:
@@ -192,7 +180,7 @@ sudo ufw status numbered
 ## Basic UFW firewall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-basic-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-basic-setup.sh | sudo bash
 ```
 
 It applies three operations:
@@ -208,7 +196,7 @@ This script does not guess or open the SSH port. Run it only after adding and te
 ## Fail2Ban SSH protection
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/fail2ban-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/fail2ban-setup.sh | sudo bash
 ```
 
 The effective SSH port is read from `sshd -T` and written to `/etc/fail2ban/jail.d/sshd.local`.
@@ -229,7 +217,7 @@ sudo fail2ban-client status sshd
 ## Daily security report
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/security-check-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/security-check-setup.sh | sudo bash
 ```
 
 The setup installs `/usr/local/bin/security-check.sh`, enables cron and adds a root job at `09:00`. The report contains:
@@ -254,13 +242,13 @@ sudo crontab -l
 Enable BBR:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-enable.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-enable.sh | sudo bash
 ```
 
 Disable BBR and use common Debian defaults:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-disable.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/bbr-disable.sh | sudo bash
 ```
 
 Both scripts manage `/etc/sysctl.d/99-bbr-vps-toolkit.conf` and apply only that file. Enable sets `fq` + `bbr`; disable sets `fq_codel` + `cubic`. Unsupported kernel settings fail explicitly instead of silently selecting an unrelated fallback.
@@ -272,7 +260,7 @@ sysctl net.core.default_qdisc net.ipv4.tcp_congestion_control
 ## Docker Engine and Compose
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/docker-debian-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/docker-debian-setup.sh | sudo bash
 ```
 
 The script follows Docker's Debian APT-repository method:
@@ -298,7 +286,7 @@ sudo docker compose version
 Prerequisites: Docker Engine with the Compose plugin.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/rustdesk-server-setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/rustdesk-server-setup.sh | sudo bash
 ```
 
 The script writes `/root/rustdeskdocker/docker-compose.yml`, starts `hbbs` and `hbbr` on a dedicated bridge network with published ports, following RustDesk's official compose file, and persists keys/data under `/root/rustdeskdocker/data`.
@@ -335,7 +323,7 @@ sudo cat data/id_ed25519.pub
 ## Ookla Speedtest
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/speedtest-cli.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/speedtest-cli.sh | sudo bash
 ```
 
 The script connects Ookla's Packagecloud repository, installs the official `speedtest` package and accepts the license/GDPR prompt for the initial test run.
@@ -345,7 +333,7 @@ The script connects Ookla's Packagecloud repository, installs the official `spee
 This wrapper does not require root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ip-quality-check.sh | bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ip-quality-check.sh | bash
 ```
 
 It downloads and runs the external IP.Check.Place checker in English with non-interactive options. Review that upstream service before using it on a sensitive host.
@@ -355,13 +343,13 @@ It downloads and runs the external IP.Check.Place checker in English with non-in
 Disable incoming IPv4 and IPv6 echo requests:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-disable-ping.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-disable-ping.sh | sudo bash
 ```
 
 Restore them:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-enable-ping.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/ufw-enable-ping.sh | sudo bash
 ```
 
 The scripts modify only the echo-request rules in `/etc/ufw/before.rules` and `/etc/ufw/before6.rules`, verify the expected lines and reload UFW. Other ICMP/ICMPv6 traffic required for normal networking is not changed.

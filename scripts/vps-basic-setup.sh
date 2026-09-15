@@ -36,9 +36,11 @@ run_script hostname-change.sh "$NEW_HOSTNAME"
 run_script apt-auto-upgrades.sh
 run_script ssh-port-change.sh "$NEW_SSH_PORT"
 run_script ufw-basic-setup.sh
+run_script ufw-disable-ping.sh
 run_script fail2ban-setup.sh
 run_script security-check-setup.sh
 run_script bbr-enable.sh
+run_script docker-debian-setup.sh
 
 printf '\n\033[1;32m%s\n%s\n%s\n%s\n%s\033[0m\n' \
     '============================================================' \

@@ -15,6 +15,12 @@ The scripts deliberately target Debian with systemd. They do not try to guess th
 
 All administrative scripts stop before making changes unless they run as root. `ip-quality-check.sh` is the only script that does not require elevated privileges.
 
+The one-line commands below are written for an administrator who works through `sudo`. A fresh minimal Debian VPS usually has neither `sudo` nor `curl`, and the first login is the `root` shell. In that case omit `sudo` and install `curl` first:
+
+```bash
+apt-get update && apt-get install -y curl
+```
+
 Before piping a remote script into root Bash, inspect it if the server or repository is not under your control:
 
 ```bash
@@ -67,6 +73,12 @@ The basic deployment script accepts a new hostname and SSH port:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+```
+
+On a fresh VPS as `root`, where `sudo` and `curl` are not installed yet:
+
+```bash
+apt-get update && apt-get install -y curl && curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | bash -s -- ordinary-coffee 41337
 ```
 
 It downloads one repository archive so every child script comes from the same snapshot, then runs:

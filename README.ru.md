@@ -15,6 +15,12 @@
 
 Все административные скрипты останавливаются до внесения изменений, если запущены не от root. Повышенные права не нужны только для `ip-quality-check.sh`.
 
+Однострочные команды ниже написаны для администратора, работающего через `sudo`. На свежем минимальном Debian VPS обычно нет ни `sudo`, ни `curl`, а первый вход выполняется в shell `root`. В этом случае уберите `sudo` и сначала установите `curl`:
+
+```bash
+apt-get update && apt-get install -y curl
+```
+
 Перед передачей удалённого скрипта в root Bash его можно скачать и проверить:
 
 ```bash
@@ -67,6 +73,12 @@ curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | sudo bash -s -- ordinary-coffee 41337
+```
+
+На свежем VPS под `root`, где `sudo` и `curl` ещё не установлены:
+
+```bash
+apt-get update && apt-get install -y curl && curl -fsSL https://raw.githubusercontent.com/Plasmoid77/VPS-toolkit/main/scripts/vps-basic-setup.sh | bash -s -- ordinary-coffee 41337
 ```
 
 Он загружает один архив репозитория, поэтому все дочерние скрипты берутся из одного snapshot, а затем выполняет:
